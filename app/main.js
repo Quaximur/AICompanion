@@ -149,6 +149,21 @@ function toggleVisible() {
   tray.setContextMenu(buildMenu());
 }
 
+function showWindow() {
+  if (!win.isVisible()) win.showInactive();
+  tray.setContextMenu(buildMenu());
+}
+
+// Как запустить это же приложение снова: читает плагин Claude Code для команды /companion
+function writeLaunchInfo() {
+  const info = { argv: [process.execPath, app.getAppPath()], port: PORT };
+  try {
+    fs.writeFileSync(path.join(app.getPath('userData'), 'launch.json'), JSON.stringify(info, null, 2));
+  } catch (err) {
+    console.error('Не удалось записать launch.json:', err.message);
+  }
+}
+
 function createTray() {
   const icon = nativeImage
     .createFromPath(path.join(__dirname, 'renderer', 'frames', 'frame_00.png'))
@@ -200,7 +215,12 @@ function startServer() {
       return;
     }
     if (req.method === 'GET' && req.url === '/health') {
-      res.writeHead(200, { 'Content-Type': 'application/json' }).end('{"ok":true}');
+      res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ ok: true, visible: win.isVisible() }));
+      return;
+    }
+    if (req.method === 'POST' && req.url === '/show') {
+      showWindow();
+      res.writeHead(204).end();
       return;
     }
     if (req.method !== 'POST' || req.url !== '/event') {
@@ -316,7 +336,10 @@ if (!app.requestSingleInstanceLock()) {
     createWindow();
     createTray();
     startServer();
+    writeLaunchInfo();
     setInterval(pollHover, HOVER_POLL_MS);
   });
+  // Повторный запуск (например, из /companion) просто показывает уже открытое окно
+  app.on('second-instance', () => win && showWindow());
   app.on('window-all-closed', () => app.quit());
 }
