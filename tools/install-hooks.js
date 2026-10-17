@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-// Подключает компаньона к Claude Code (~/.claude/settings.json) и Codex (~/.codex/hooks.json).
-//   node tools/install-hooks.js               — установить в оба
-//   node tools/install-hooks.js --only=claude — только Claude Code
-//   node tools/install-hooks.js --uninstall   — убрать
+// Подключает компаньона к Codex (~/.codex/hooks.json).
+//   node tools/install-hooks.js             — установить
+//   node tools/install-hooks.js --uninstall — убрать
+// Claude Code подключается плагином (см. README). Из ~/.claude/settings.json скрипт только
+// убирает хуки, прописанные вручную прежними версиями, чтобы события не приходили дважды.
 // Перед записью рядом кладётся резервная копия *.bak-companion.
 
 const fs = require('node:fs');
@@ -10,13 +11,12 @@ const os = require('node:os');
 const path = require('node:path');
 
 const MARKER = 'companion-hook.js';
-const hookScript = path.resolve(__dirname, '..', 'hooks', MARKER).replace(/\\/g, '/');
+const hookScript = path.resolve(__dirname, '..', 'plugin', 'scripts', MARKER).replace(/\\/g, '/');
 
 const TARGETS = {
   claude: {
     file: path.join(os.homedir(), '.claude', 'settings.json'),
-    source: 'claude-code',
-    events: ['SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'PermissionRequest', 'Notification', 'Stop'],
+    cleanupOnly: true,
   },
   codex: {
     file: path.join(os.homedir(), '.codex', 'hooks.json'),
@@ -49,10 +49,12 @@ function apply(name, target, uninstall) {
     return;
   }
   const config = readJson(target.file);
+  if (target.cleanupOnly && !JSON.stringify(config.hooks ?? {}).includes(MARKER)) return;
   config.hooks ??= {};
   stripCompanion(config.hooks);
 
-  if (!uninstall) {
+  const install = !uninstall && !target.cleanupOnly;
+  if (install) {
     const command = `node "${hookScript}" ${target.source}`;
     for (const event of target.events) {
       const group = { hooks: [{ type: 'command', command, timeout: 5 }] };
@@ -64,14 +66,12 @@ function apply(name, target, uninstall) {
 
   if (fs.existsSync(target.file)) fs.copyFileSync(target.file, target.file + '.bak-companion');
   fs.writeFileSync(target.file, JSON.stringify(config, null, 2) + '\n');
-  console.log(`✓ ${name}: ${uninstall ? 'хуки удалены из' : 'хуки добавлены в'} ${target.file}`);
+  console.log(`✓ ${name}: ${install ? 'хуки добавлены в' : 'хуки удалены из'} ${target.file}`);
 }
 
 const uninstall = process.argv.includes('--uninstall');
-const only = process.argv.find((a) => a.startsWith('--only='))?.split('=')[1];
 
 for (const [name, target] of Object.entries(TARGETS)) {
-  if (only && only !== name) continue;
   try {
     apply(name, target, uninstall);
   } catch (err) {
@@ -79,4 +79,4 @@ for (const [name, target] of Object.entries(TARGETS)) {
     process.exitCode = 1;
   }
 }
-if (!uninstall) console.log('Перезапустите Claude Code / Codex, чтобы хуки подхватились.');
+if (!uninstall) console.log('Перезапустите Codex, чтобы хуки подхватились.');

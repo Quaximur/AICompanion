@@ -7,7 +7,7 @@
 - **Electron**: прозрачное окно без рамки, поверх всех окон, клики проходят сквозь пустые области. Есть иконка в трее. Перетаскивание и «клики насквозь» ведёт главный процесс по системному курсору; состояние кнопки мыши читается из Windows через **koffi** (`GetAsyncKeyState`).
 - **HTML/CSS/JS** без фреймворков: кадры спрайт-листа, CSS-анимации режимов и печать текста с подбором формы рта по гласным.
 - **Локальный HTTP** `127.0.0.1:48159`: единая точка входа событий от всех агентов.
-- **Хуки Claude Code и Codex**: `hooks/companion-hook.js` превращает события агента в события компаньона.
+- **Плагин Claude Code и хуки Codex**: общий скрипт `plugin/scripts/companion-hook.js` превращает события агента в события компаньона.
 - **MCP-сервер** `mcp/companion-mcp.js` для приложений без хуков (Claude Desktop, вкладка Chat).
 - **Python + Pillow** `tools/slice_sprites.py`: нарезает спрайт-лист и выравнивает кадры.
 
@@ -36,24 +36,48 @@ node tools/demo.js "Привет!"
 
 | Приложение | Как подключается | Что показывает |
 |---|---|---|
-| Claude Code (CLI, вкладка Code в Claude Desktop, IDE) | хуки в `~/.claude/settings.json` | все режимы + финальный ответ |
+| Claude Code (CLI, вкладка Code в Claude Desktop, IDE) | плагин `ai-companion` | все режимы + финальный ответ |
 | Codex (CLI, приложение Codex, IDE) | хуки в `~/.codex/hooks.json` | все режимы + финальный ответ |
 | Claude Desktop, вкладка Chat | MCP-сервер | то, что модель сама решит сообщить через инструменты |
 | ChatGPT Desktop (обычный чат) | пока никак: у приложения нет хуков и локального MCP | — |
 
-### Claude Code и Codex
+### Claude Code — плагин
+
+Плагин лежит в `plugin/`, а этот репозиторий служит для него каталогом (marketplace). Установка из GitHub:
+
+```bash
+claude plugin marketplace add Quaximur/AICompanion
+```
+
+```bash
+claude plugin install ai-companion@ai-companion
+```
+
+Для локальной разработки вместо `Quaximur/AICompanion` можно указать путь к папке проекта. Тогда плагин читается прямо из `plugin/`.
+
+Включается и выключается плагин так:
+
+```bash
+claude plugin disable ai-companion@ai-companion
+```
+
+```bash
+claude plugin enable ai-companion@ai-companion
+```
+
+В интерактивном Claude Code это же делается через `/plugin`. Изменения подхватываются в новых сессиях или после `/reload-plugins`.
+
+### Codex
 
 ```bash
 npm run hooks:install
 ```
 
-Скрипт дописывает хуки в оба конфига (перед записью сохраняет копию `*.bak-companion`) и не трогает ваши существующие хуки. После установки перезапустите агентов. Удалить хуки:
+Скрипт дописывает хуки в `~/.codex/hooks.json` (перед записью сохраняет копию `*.bak-companion`) и не трогает ваши существующие хуки. Если в `~/.claude/settings.json` остались хуки компаньона, прописанные вручную прежней версией, скрипт их уберёт, чтобы при включённом плагине события не приходили дважды. После установки перезапустите Codex. Удалить хуки:
 
 ```bash
 npm run hooks:uninstall
 ```
-
-Чтобы подключить только один агент, используйте `node tools/install-hooks.js --only=claude` или `--only=codex`.
 
 Как события агента превращаются в режимы компаньона:
 

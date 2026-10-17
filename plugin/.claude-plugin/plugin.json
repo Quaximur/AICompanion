@@ -1,0 +1,12 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "ai-companion",
+  "version": "0.1.0",
+  "description": "Показывает режим работы Claude Code и пересказывает ответы через анимированного компаньона на рабочем столе (нужно запущенное приложение AI Companion)",
+  "author": {
+    "name": "Quaximur",
+    "email": "150851609+Quaximur@users.noreply.github.com"
+  },
+  "repository": "https://github.com/Quaximur/AICompanion",
+  "keywords": ["companion", "overlay", "status", "hooks"]
+}

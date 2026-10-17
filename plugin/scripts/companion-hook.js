@@ -2,10 +2,27 @@
 // Хук для Claude Code и Codex: превращает события агента в события компаньона.
 // Использование в настройках хуков: node <path>/companion-hook.js claude-code|codex
 // Хук никогда не мешает агенту: ничего не пишет в stdout и всегда завершается с кодом 0.
+// Скрипт самодостаточный: плагин Claude Code копируется в кэш без остального проекта.
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { sendEvent } = require('../app/shared/protocol');
+
+// Протокол тот же, что в app/shared/protocol.js
+const PORT = Number(process.env.AI_COMPANION_PORT) || 48159;
+const HOST = '127.0.0.1';
+
+async function sendEvent(event, timeoutMs = 800) {
+  try {
+    await fetch(`http://${HOST}:${PORT}/event`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(event),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch {
+    // Компаньон не запущен — агенту это не должно мешать
+  }
+}
 
 const source = process.argv[2] || 'claude-code';
 

@@ -1,0 +1,16 @@
+{
+  "name": "ai-companion",
+  "description": "Анимированный desktop-компаньон для Claude Code",
+  "owner": {
+    "name": "Quaximur",
+    "email": "150851609+Quaximur@users.noreply.github.com"
+  },
+  "plugins": [
+    {
+      "name": "ai-companion",
+      "source": "./plugin",
+      "description": "Режим работы и ответы Claude Code в анимированном компаньоне на рабочем столе",
+      "version": "0.1.0"
+    }
+  ]
+}
