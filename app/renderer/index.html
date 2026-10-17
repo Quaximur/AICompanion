@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'">
+  <title>AI Companion</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="stage">
+    <div id="bubble" class="interactive hidden">
+      <div id="bubble-source"></div>
+      <div id="bubble-text"></div>
+    </div>
+
+    <div id="buddy" class="interactive state-idle">
+      <div id="thought" class="hidden"><span></span><span></span><span></span></div>
+      <img id="sprite" src="frames/frame_00.png" alt="" draggable="false">
+    </div>
+
+    <div id="chip" class="interactive hidden">
+      <span id="chip-icon"></span>
+      <span id="chip-text"></span>
+    </div>
+  </div>
+  <script src="companion.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "ai-companion",
+  "version": "0.1.0",
+  "description": "Desktop-компаньон для Claude и Codex: показывает режим работы агента и озвучивает ответы в облачке",
+  "main": "app/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "hooks:install": "node tools/install-hooks.js",
+    "hooks:uninstall": "node tools/install-hooks.js --uninstall",
+    "demo": "node tools/demo.js",
+    "frames": "python tools/slice_sprites.py assets/sheet.webp app/renderer/frames"
+  },
+  "devDependencies": {
+    "electron": "^44.9.0"
+  },
+  "dependencies": {
+    "koffi": "^3.3.3"
+  }
+}
