@@ -388,9 +388,24 @@ els.bubble.addEventListener('click', () => {
   }
 });
 
+// Сердечки вылетают из персонажа при тыке
+function spawnHearts() {
+  for (let i = 0; i < 3; i++) {
+    const heart = document.createElement('span');
+    heart.className = 'heart';
+    heart.textContent = pick(['♥', '♡', '✦']);
+    heart.style.left = `${30 + Math.random() * 40}%`;
+    heart.style.setProperty('--dx', `${(Math.random() - 0.5) * 50}px`);
+    heart.style.animationDelay = `${i * 120}ms`;
+    heart.addEventListener('animationend', () => heart.remove());
+    els.buddy.append(heart);
+  }
+}
+
 // Тык в персонажа — реакция
 function poke() {
   if (speaking) return;
+  spawnHearts();
   setFrame(pick([FRAME.winkOpen, FRAME.winkOpen2, FRAME.laugh2]), true);
   setBuddyState('done');
   setTimeout(() => {
