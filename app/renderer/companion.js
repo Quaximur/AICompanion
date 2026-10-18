@@ -412,6 +412,7 @@ if (bridge) {
   bridge.onEvent(handleEvent);
   bridge.onSettings(applySettings);
   bridge.onPoke(poke);
+  bridge.onHidden((hidden) => document.body.classList.toggle('companion-hidden', hidden));
 } else {
   // Открыто в обычном браузере — для отладки вёрстки
   window.companionDebug = { handleEvent, applySettings };

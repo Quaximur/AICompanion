@@ -35,6 +35,9 @@ html, body {
 
 .hidden { display: none !important; }
 
+/* Спрятанный через трей компаньон: окно остаётся, но пустое и пропускает клики */
+body.companion-hidden #stage { visibility: hidden; }
+
 /* ---------- облачко ---------- */
 
 #bubble {

@@ -18,6 +18,9 @@ let tray = null;
 let press = null;          // нажатие на персонажа: { offsetX, offsetY, startX, startY, moved, timer }
 let hitRects = [];         // где в окне есть что-то кликабельное (сообщает renderer)
 let ignoringMouse = true;
+// Спрятан ли компаньон. Окно при этом не прячется через hide(): после hide()/show() Chromium
+// не возвращает в строй дочернее окно страницы, и клики по персонажу перестают доходить.
+let isHidden = false;
 let settings = { tts: false, position: null, scale: 1, locked: false };
 
 // ---------- settings ----------
@@ -138,20 +141,25 @@ function buildMenu() {
     { label: 'Проверить (демо)', click: () => runDemo() },
     { label: 'Вернуть в угол', click: resetPosition },
     { type: 'separator' },
-    { label: win?.isVisible() ? 'Спрятать' : 'Показать', click: toggleVisible },
+    { label: isHidden ? 'Показать' : 'Спрятать', click: toggleVisible },
     { label: 'Выход', click: () => app.quit() },
   ]);
 }
 
-function toggleVisible() {
-  if (win.isVisible()) win.hide();
-  else win.showInactive();
+function setHidden(hidden) {
+  isHidden = hidden;
+  win.webContents.send('hidden', hidden);
+  if (hidden) setIgnoreMouse(true);
+  else pollHover();
   tray.setContextMenu(buildMenu());
 }
 
+function toggleVisible() {
+  setHidden(!isHidden);
+}
+
 function showWindow() {
-  if (!win.isVisible()) win.showInactive();
-  tray.setContextMenu(buildMenu());
+  if (isHidden) setHidden(false);
 }
 
 // Как запустить это же приложение снова: читает плагин Claude Code для команды /companion
@@ -215,7 +223,7 @@ function startServer() {
       return;
     }
     if (req.method === 'GET' && req.url === '/health') {
-      res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ ok: true, visible: win.isVisible() }));
+      res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ ok: true, visible: !isHidden }));
       return;
     }
     if (req.method === 'POST' && req.url === '/show') {
@@ -263,7 +271,11 @@ function setIgnoreMouse(ignore) {
 }
 
 function pollHover() {
-  if (!win || press || !win.isVisible()) return;
+  if (!win || press) return;
+  if (isHidden) {
+    setIgnoreMouse(true);
+    return;
+  }
   const cursor = screen.getCursorScreenPoint();
   const b = win.getBounds();
   const x = cursor.x - b.x;
