@@ -1,55 +1,61 @@
+<div align="center">
+
+<img src="docs/companion.png" width="200" alt="A little horned dragon talking and winking">
+
 # AI Companion
+
+*A tiny dragon in the corner of your screen that keeps you company while your AI agent works.*
+
+<img src="https://img.shields.io/badge/Windows-overlay-8b6cff?style=flat-square" alt="Windows overlay">
+<img src="https://img.shields.io/badge/Electron-44-8b6cff?style=flat-square&logo=electron&logoColor=white" alt="Electron 44">
+<img src="https://img.shields.io/badge/Claude_Code-plugin-d97757?style=flat-square&logo=claude&logoColor=white" alt="Claude Code plugin">
+<img src="https://img.shields.io/badge/Codex-hooks-412991?style=flat-square" alt="Codex hooks">
 
 **English** · [Русский](README.ru.md)
 
-<p align="center">
-  <img src="docs/companion.png" width="220" alt="The companion: a little horned dragon talking and winking">
-</p>
+</div>
 
-An animated companion that lives in a corner of your screen. It shows what your AI agent is doing right now (thinking, editing a file, waiting for your approval) and reads the agent's answer back in a speech bubble with mouth animation. It has no input field of its own: you keep talking to the agent in its usual desktop app, and the companion only shows what is going on.
+<br>
 
-## Stack
+It shows what your agent is up to — thinking, editing a file, waiting for you — and reads its answers back in a little speech bubble, mouth moving as it talks. There is nothing to type into: you keep chatting in the agent's own app, and the companion just keeps you posted.
 
-- **Electron**: a transparent, frameless, always-on-top window; clicks pass through its empty areas. Lives in the system tray. Dragging and click-through are driven by the main process from the system cursor; the mouse button state is read from Windows through **koffi** (`GetAsyncKeyState`).
-- **Plain HTML/CSS/JS**: sprite-sheet frames, CSS animations for each state, and a typewriter that picks the mouth shape from the vowels it prints.
-- **Local HTTP** on `127.0.0.1:48159`: a single entry point for events from every agent.
-- **Claude Code plugin and Codex hooks**: the shared script `plugin/scripts/companion-hook.js` turns agent events into companion events.
-- **MCP server** `mcp/companion-mcp.js` for apps without hooks (the Chat tab of Claude Desktop).
-- **Python + Pillow** `tools/slice_sprites.py`: slices the sprite sheet and aligns the frames.
+<table>
+<tr>
+<td align="center" width="25%">💭<br><sub><b>thinking</b><br>it over</sub></td>
+<td align="center" width="25%">🛠️<br><sub><b>working</b><br><code>Edit main.js</code></sub></td>
+<td align="center" width="25%">✋<br><sub><b>waiting</b><br>for your OK</sub></td>
+<td align="center" width="25%">💬<br><sub><b>speaking</b><br>the answer</sub></td>
+</tr>
+</table>
 
-## Running
+## Quick start
 
 ```bash
 npm install
 npm start
 ```
 
-Try it without an agent:
+Then say hi:
 
 ```bash
 npm run demo
 ```
 
-To make the companion say something:
+> [!TIP]
+> With the Claude Code plugin installed, type `/companion` to bring the dragon back whenever it is closed or hidden.
 
-```bash
-node tools/demo.js "Hello!"
-```
+## Connect your agent
 
-The interface is in Russian for now. Right-click the character or use the tray icon to open the menu: read aloud (Windows SAPI), size, pin in place, demo, back to the corner, quit. You can drag the character with the mouse unless it is pinned. Clicking a bubble that is still typing shows the whole text at once; clicking it again closes it.
+| | Agent | Setup | Shows |
+|:-:|---|---|---|
+| ✅ | **Claude Code** — CLI, Code tab, IDEs | plugin | every state + answers |
+| ✅ | **Codex** — CLI, app, IDEs | hooks | every state + answers |
+| 🟡 | **Claude Desktop** — Chat tab | MCP server | what the model chooses to share |
+| ⏳ | **ChatGPT Desktop** | — | no hooks or local MCP yet |
 
-## Connecting agents
-
-| App | How it connects | What it shows |
-|---|---|---|
-| Claude Code (CLI, the Code tab of Claude Desktop, IDEs) | the `ai-companion` plugin | every state + the final answer |
-| Codex (CLI, Codex app, IDEs) | hooks in `~/.codex/hooks.json` | every state + the final answer |
-| Claude Desktop, Chat tab | MCP server | whatever the model chooses to report through the tools |
-| ChatGPT Desktop (regular chat) | not yet: the app has no hooks and no local MCP | — |
-
-### Claude Code: the plugin
-
-The plugin lives in `plugin/`, and this repository is its marketplace. Install it from GitHub:
+<details>
+<summary><b>Claude Code</b> · plugin</summary>
+<br>
 
 ```bash
 claude plugin marketplace add Quaximur/AICompanion
@@ -59,59 +65,29 @@ claude plugin marketplace add Quaximur/AICompanion
 claude plugin install ai-companion@ai-companion
 ```
 
-For local development, pass the path to the project folder instead of `Quaximur/AICompanion`; the plugin is then read straight from `plugin/`.
+Turn it off and on with `claude plugin disable` / `enable ai-companion@ai-companion`, or from `/plugin`.
 
-Turn the plugin off and on:
+The plugin adds `/companion` and a **Start** button above the prompt while the companion isn't running. It finds the app through `%APPDATA%\ai-companion\launch.json`, which the app writes on every start. If it can't find it, launch the companion once by hand with `npm start`.
 
-```bash
-claude plugin disable ai-companion@ai-companion
-```
+</details>
 
-```bash
-claude plugin enable ai-companion@ai-companion
-```
-
-In interactive Claude Code the same is available under `/plugin`. Changes apply to new sessions or after `/reload-plugins`.
-
-#### Opening the companion from Claude Code
-
-- The `/companion` command in the `/` menu shows a hidden companion, or starts the app if it is closed.
-- While the companion is not running, a row above the prompt says «Компаньон не запущен» ("the companion is not running") and offers «Запустить» (start) and «Скрыть» (hide) buttons.
-
-The plugin learns where the app is from `%APPDATA%\ai-companion\launch.json`, which the app writes every time it starts. If the app has never been started, the plugin looks for it next to itself (this works when the plugin is installed from the project folder). If it finds nothing, start the companion once by hand with `npm start`.
-
-Plugin tests:
-
-```bash
-claude plugin test ./plugin
-```
-
-### Codex
+<details>
+<summary><b>Codex</b> · hooks</summary>
+<br>
 
 ```bash
 npm run hooks:install
 ```
 
-The script adds the hooks to `~/.codex/hooks.json` (saving a `*.bak-companion` copy first) and leaves your existing hooks alone. If `~/.claude/settings.json` still has companion hooks added by hand by an older version, the script removes them, so events do not arrive twice while the plugin is on. Restart Codex afterwards. To remove the hooks:
+Adds hooks to `~/.codex/hooks.json`, keeps a `*.bak-companion` backup and leaves your own hooks alone. Restart Codex afterwards. `npm run hooks:uninstall` removes them.
 
-```bash
-npm run hooks:uninstall
-```
+</details>
 
-How agent events map to companion states:
+<details>
+<summary><b>Claude Desktop</b> · MCP server</summary>
+<br>
 
-| Agent event | State |
-|---|---|
-| `UserPromptSubmit` | thinking |
-| `PreToolUse` | working: `Edit main.js` |
-| `PermissionRequest` / `Notification` | waiting for you |
-| `Stop` | reads the last answer out in a bubble |
-
-If the companion is not running, the hook quietly exits within 0.8 s and does not get in the agent's way.
-
-### Claude Desktop (Chat)
-
-Add the server to `%APPDATA%\Claude\claude_desktop_config.json`, with the path to your copy of the project:
+Add to `%APPDATA%\Claude\claude_desktop_config.json`:
 
 ```json
 {
@@ -124,28 +100,91 @@ Add the server to `%APPDATA%\Claude\claude_desktop_config.json`, with the path t
 }
 ```
 
-The model gets the `companion_status` and `companion_say` tools. To have it use them every time, add something like this to the project instructions: "At the end of every answer, call companion_say with a short summary."
+The model gets `companion_status` and `companion_say`. Ask for them in your project instructions, e.g. *"End every answer with companion_say and a one-line summary."*
 
-## Event protocol
+</details>
 
-Any program can drive the companion:
+> [!NOTE]
+> If the companion isn't running, the hooks quietly give up within 0.8 s — your agent never waits on it.
 
-```bash
-curl -X POST http://127.0.0.1:48159/event -H "Content-Type: application/json" -d "{\"source\":\"my-tool\",\"type\":\"status\",\"state\":\"working\",\"detail\":\"Build\"}"
+## Living with it
+
+| Do | To |
+|---|---|
+| <kbd>Drag</kbd> | move it anywhere |
+| <kbd>Click</kbd> | a poke — hearts included ♥ |
+| <kbd>Right-click</kbd> | menu: voice, size, pin in place, back to the corner |
+| <kbd>Click</kbd> a bubble | show it all at once, click again to close |
+| Tray icon | hide and show |
+
+The interface speaks Russian for now.
+
+## How it works
+
+```mermaid
+flowchart LR
+  CC(["Claude Code"]) -- plugin hooks --> H{{"companion-hook.js"}}
+  CX(["Codex"]) -- hooks --> H
+  CD(["Claude Desktop"]) -- MCP --> M{{"companion-mcp.js"}}
+  H -- "POST /event" --> A["🐉 Companion<br/>127.0.0.1:48159"]
+  M -- "POST /event" --> A
+
+  classDef agent fill:#f3eeff,stroke:#8b6cff,color:#2a2140
+  classDef bridge fill:#fff4ec,stroke:#d97757,color:#2a2140
+  classDef app fill:#8b6cff,stroke:#5b3fd6,color:#ffffff
+  class CC,CX,CD agent
+  class H,M bridge
+  class A app
 ```
 
-- `type`: `status` or `say`
-- `state`: `idle`, `thinking`, `working`, `waiting`, `done`, `error`
-- `text`: the text for `say`; markdown is simplified and long text is cut to about 900 characters
+<details>
+<summary><b>Event protocol</b> · drive it from anything</summary>
+<br>
 
-Requests with an `Origin` header (that is, from web pages) are rejected.
+```bash
+curl -X POST http://127.0.0.1:48159/event \
+  -H "Content-Type: application/json" \
+  -d '{"source":"my-tool","type":"status","state":"working","detail":"Build"}'
+```
 
-## Your own character
+| Field | Values |
+|---|---|
+| `type` | `status` · `say` |
+| `state` | `idle` · `thinking` · `working` · `waiting` · `done` · `error` |
+| `text` | what to say; markdown is simplified, long text is cut to ~900 chars |
 
-Put a 4×4 sprite sheet with a transparent background in `assets/sheet.webp` and run:
+Requests carrying an `Origin` header (web pages) are turned away.
+
+</details>
+
+<details>
+<summary><b>Your own character</b> · bring a sprite sheet</summary>
+<br>
+
+Drop a 4×4 sprite sheet with a transparent background into `assets/sheet.webp`, then:
 
 ```bash
 npm run frames
 ```
 
-Which frame is which (mouth closed, half open, wide open, a wink and so on) is set in `FRAME` and `MOUTH` at the top of `app/renderer/companion.js`.
+Which frame is which — mouth closed, half open, wide, a wink — lives in `FRAME` and `MOUTH` at the top of `app/renderer/companion.js`.
+
+</details>
+
+<details>
+<summary><b>Under the hood</b></summary>
+<br>
+
+- **Electron** — a transparent, always-on-top window that lets clicks through its empty space; dragging follows the system cursor, with the mouse button read from Windows via **koffi**
+- **Plain HTML, CSS and JS** — sprite frames, state animations, a typewriter that shapes the mouth from the vowels it prints
+- **Local HTTP** on `127.0.0.1:48159` — one door for every agent
+- **Claude Code plugin** — hooks, the `/companion` command and the start button; tests run with `claude plugin test ./plugin`
+- **Python + Pillow** — `tools/slice_sprites.py` slices and aligns the sprite sheet
+
+</details>
+
+<br>
+
+<div align="center">
+<sub>made with a lot of 💜 and a little dragon</sub>
+</div>

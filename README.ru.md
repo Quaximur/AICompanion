@@ -1,55 +1,61 @@
+<div align="center">
+
+<img src="docs/companion.png" width="200" alt="Дракончик с рожками говорит и подмигивает">
+
 # AI Companion
+
+*Маленький дракончик в углу экрана, который составит вам компанию, пока работает ИИ-агент.*
+
+<img src="https://img.shields.io/badge/Windows-overlay-8b6cff?style=flat-square" alt="Оверлей для Windows">
+<img src="https://img.shields.io/badge/Electron-44-8b6cff?style=flat-square&logo=electron&logoColor=white" alt="Electron 44">
+<img src="https://img.shields.io/badge/Claude_Code-plugin-d97757?style=flat-square&logo=claude&logoColor=white" alt="Плагин Claude Code">
+<img src="https://img.shields.io/badge/Codex-hooks-412991?style=flat-square" alt="Хуки Codex">
 
 [English](README.md) · **Русский**
 
-<p align="center">
-  <img src="docs/companion.png" width="220" alt="Компаньон: дракончик с рожками говорит и подмигивает">
-</p>
+</div>
 
-Анимированный компаньон в углу экрана. Он показывает, чем сейчас занят агент (думает, работает с файлом, ждёт подтверждения), и пересказывает ответ в облачке с анимацией рта. Полей ввода нет: вы общаетесь с агентом в его обычном десктопном приложении, а компаньон только отображает происходящее.
+<br>
 
-## Стек
+Он показывает, чем занят агент — думает, правит файл, ждёт вас, — и пересказывает ответы в облачке, шевеля ртом. Печатать ему ничего не нужно: вы общаетесь с агентом в его привычном приложении, а компаньон просто держит вас в курсе.
 
-- **Electron**: прозрачное окно без рамки, поверх всех окон, клики проходят сквозь пустые области. Есть иконка в трее. Перетаскивание и «клики насквозь» ведёт главный процесс по системному курсору; состояние кнопки мыши читается из Windows через **koffi** (`GetAsyncKeyState`).
-- **HTML/CSS/JS** без фреймворков: кадры спрайт-листа, CSS-анимации режимов и печать текста с подбором формы рта по гласным.
-- **Локальный HTTP** `127.0.0.1:48159`: единая точка входа событий от всех агентов.
-- **Плагин Claude Code и хуки Codex**: общий скрипт `plugin/scripts/companion-hook.js` превращает события агента в события компаньона.
-- **MCP-сервер** `mcp/companion-mcp.js` для приложений без хуков (Claude Desktop, вкладка Chat).
-- **Python + Pillow** `tools/slice_sprites.py`: нарезает спрайт-лист и выравнивает кадры.
+<table>
+<tr>
+<td align="center" width="25%">💭<br><sub><b>думает</b><br>над задачей</sub></td>
+<td align="center" width="25%">🛠️<br><sub><b>работает</b><br><code>Edit main.js</code></sub></td>
+<td align="center" width="25%">✋<br><sub><b>ждёт</b><br>вашего «да»</sub></td>
+<td align="center" width="25%">💬<br><sub><b>рассказывает</b><br>ответ</sub></td>
+</tr>
+</table>
 
-## Запуск
+## Быстрый старт
 
 ```bash
 npm install
 npm start
 ```
 
-Проверка без агента:
+И поздоровайтесь:
 
 ```bash
 npm run demo
 ```
 
-Чтобы компаньон сказал произвольную фразу:
-
-```bash
-node tools/demo.js "Привет!"
-```
-
-Правый клик по персонажу или иконка в трее открывают меню: озвучка голосом (Windows SAPI), размер, «зафиксировать на месте», демо, «вернуть в угол», выход. Персонажа можно перетаскивать мышью, если он не зафиксирован. Клик по облачку сразу показывает весь текст, повторный клик закрывает облачко.
+> [!TIP]
+> С плагином Claude Code достаточно набрать `/companion`, чтобы вернуть дракончика, если он закрыт или спрятан.
 
 ## Подключение агентов
 
-| Приложение | Как подключается | Что показывает |
-|---|---|---|
-| Claude Code (CLI, вкладка Code в Claude Desktop, IDE) | плагин `ai-companion` | все режимы + финальный ответ |
-| Codex (CLI, приложение Codex, IDE) | хуки в `~/.codex/hooks.json` | все режимы + финальный ответ |
-| Claude Desktop, вкладка Chat | MCP-сервер | то, что модель сама решит сообщить через инструменты |
-| ChatGPT Desktop (обычный чат) | пока никак: у приложения нет хуков и локального MCP | — |
+| | Агент | Подключение | Что показывает |
+|:-:|---|---|---|
+| ✅ | **Claude Code** — CLI, вкладка Code, IDE | плагин | все режимы + ответы |
+| ✅ | **Codex** — CLI, приложение, IDE | хуки | все режимы + ответы |
+| 🟡 | **Claude Desktop** — вкладка Chat | MCP-сервер | то, чем модель решит поделиться |
+| ⏳ | **ChatGPT Desktop** | — | пока нет хуков и локального MCP |
 
-### Claude Code — плагин
-
-Плагин лежит в `plugin/`, а этот репозиторий служит для него каталогом (marketplace). Установка из GitHub:
+<details>
+<summary><b>Claude Code</b> · плагин</summary>
+<br>
 
 ```bash
 claude plugin marketplace add Quaximur/AICompanion
@@ -59,59 +65,29 @@ claude plugin marketplace add Quaximur/AICompanion
 claude plugin install ai-companion@ai-companion
 ```
 
-Для локальной разработки вместо `Quaximur/AICompanion` можно указать путь к папке проекта. Тогда плагин читается прямо из `plugin/`.
+Выключить и включить: `claude plugin disable` / `enable ai-companion@ai-companion` или через `/plugin`.
 
-Включается и выключается плагин так:
+Плагин добавляет команду `/companion` и кнопку «Запустить» над полем ввода, пока компаньон не запущен. Приложение он находит по `%APPDATA%\ai-companion\launch.json`, который оно записывает при каждом запуске. Если не нашёл — запустите компаньона один раз вручную через `npm start`.
 
-```bash
-claude plugin disable ai-companion@ai-companion
-```
+</details>
 
-```bash
-claude plugin enable ai-companion@ai-companion
-```
-
-В интерактивном Claude Code это же делается через `/plugin`. Изменения подхватываются в новых сессиях или после `/reload-plugins`.
-
-#### Запуск компаньона из Claude Code
-
-- Команда `/companion` в меню `/`: показывает спрятанного компаньона, а если он закрыт — запускает приложение.
-- Когда компаньон не запущен, над полем ввода появляется строка «Компаньон не запущен» с кнопками «Запустить» и «Скрыть».
-
-Где лежит приложение, плагин узнаёт из `%APPDATA%\ai-companion\launch.json`, который приложение записывает при каждом запуске. Если приложение ещё ни разу не запускалось, плагин ищет его рядом с собой (так бывает, когда плагин установлен из папки проекта). Если не нашёл — запустите компаньона один раз вручную через `npm start`.
-
-Тесты плагина:
-
-```bash
-claude plugin test ./plugin
-```
-
-### Codex
+<details>
+<summary><b>Codex</b> · хуки</summary>
+<br>
 
 ```bash
 npm run hooks:install
 ```
 
-Скрипт дописывает хуки в `~/.codex/hooks.json` (перед записью сохраняет копию `*.bak-companion`) и не трогает ваши существующие хуки. Если в `~/.claude/settings.json` остались хуки компаньона, прописанные вручную прежней версией, скрипт их уберёт, чтобы при включённом плагине события не приходили дважды. После установки перезапустите Codex. Удалить хуки:
+Дописывает хуки в `~/.codex/hooks.json`, сохраняет копию `*.bak-companion` и не трогает ваши собственные хуки. После установки перезапустите Codex. Убрать: `npm run hooks:uninstall`.
 
-```bash
-npm run hooks:uninstall
-```
+</details>
 
-Как события агента превращаются в режимы компаньона:
+<details>
+<summary><b>Claude Desktop</b> · MCP-сервер</summary>
+<br>
 
-| Событие агента | Режим |
-|---|---|
-| `UserPromptSubmit` | думает |
-| `PreToolUse` | работает: `Edit main.js` |
-| `PermissionRequest` / `Notification` | ждёт вас |
-| `Stop` | читает последний ответ вслух в облачке |
-
-Если компаньон не запущен, хук молча завершается за 0,8 с и агенту не мешает.
-
-### Claude Desktop (Chat)
-
-Добавьте сервер в `%APPDATA%\Claude\claude_desktop_config.json`, указав путь к своей копии проекта:
+Добавьте в `%APPDATA%\Claude\claude_desktop_config.json`:
 
 ```json
 {
@@ -124,23 +100,64 @@ npm run hooks:uninstall
 }
 ```
 
-Модель получит инструменты `companion_status` и `companion_say`. Чтобы она пользовалась ими постоянно, добавьте в инструкции проекта, например: «В конце каждого ответа вызывай companion_say с коротким резюме».
+Модель получит `companion_status` и `companion_say`. Попросите о них в инструкциях проекта, например: *«В конце каждого ответа вызывай companion_say с коротким резюме»*.
 
-## Протокол событий
+</details>
 
-Любая программа может управлять компаньоном:
+> [!NOTE]
+> Если компаньон не запущен, хуки тихо сдаются за 0,8 с — агент его никогда не ждёт.
 
-```bash
-curl -X POST http://127.0.0.1:48159/event -H "Content-Type: application/json" -d "{\"source\":\"my-tool\",\"type\":\"status\",\"state\":\"working\",\"detail\":\"Сборка\"}"
+## В быту
+
+| Что сделать | Что будет |
+|---|---|
+| <kbd>Перетащить</kbd> | переедет куда угодно |
+| <kbd>Клик</kbd> | тык — с сердечками ♥ |
+| <kbd>Правый клик</kbd> | меню: голос, размер, закрепить на месте, вернуть в угол |
+| <kbd>Клик</kbd> по облачку | показать текст целиком, второй клик закрывает |
+| Иконка в трее | спрятать и показать |
+
+## Как это устроено
+
+```mermaid
+flowchart LR
+  CC(["Claude Code"]) -- хуки плагина --> H{{"companion-hook.js"}}
+  CX(["Codex"]) -- хуки --> H
+  CD(["Claude Desktop"]) -- MCP --> M{{"companion-mcp.js"}}
+  H -- "POST /event" --> A["🐉 Компаньон<br/>127.0.0.1:48159"]
+  M -- "POST /event" --> A
+
+  classDef agent fill:#f3eeff,stroke:#8b6cff,color:#2a2140
+  classDef bridge fill:#fff4ec,stroke:#d97757,color:#2a2140
+  classDef app fill:#8b6cff,stroke:#5b3fd6,color:#ffffff
+  class CC,CX,CD agent
+  class H,M bridge
+  class A app
 ```
 
-- `type`: `status` или `say`
-- `state`: `idle`, `thinking`, `working`, `waiting`, `done`, `error`
-- `text`: текст для `say`; markdown упрощается, а длинный текст обрезается до ~900 символов
+<details>
+<summary><b>Протокол событий</b> · управляйте из чего угодно</summary>
+<br>
 
-Запросы с заголовком `Origin` (то есть из браузерных страниц) отклоняются.
+```bash
+curl -X POST http://127.0.0.1:48159/event \
+  -H "Content-Type: application/json" \
+  -d '{"source":"my-tool","type":"status","state":"working","detail":"Сборка"}'
+```
 
-## Свой персонаж
+| Поле | Значения |
+|---|---|
+| `type` | `status` · `say` |
+| `state` | `idle` · `thinking` · `working` · `waiting` · `done` · `error` |
+| `text` | что сказать; markdown упрощается, длинный текст обрезается до ~900 символов |
+
+Запросы с заголовком `Origin` (то есть со страниц в браузере) отклоняются.
+
+</details>
+
+<details>
+<summary><b>Свой персонаж</b> · принесите спрайт-лист</summary>
+<br>
 
 Положите спрайт-лист 4×4 на прозрачном фоне в `assets/sheet.webp` и выполните:
 
@@ -148,4 +165,24 @@ curl -X POST http://127.0.0.1:48159/event -H "Content-Type: application/json" -d
 npm run frames
 ```
 
-Какие кадры за что отвечают (рот закрыт, приоткрыт, открыт широко, подмигивание и т.д.), задаётся в `FRAME` и `MOUTH` в начале `app/renderer/companion.js`.
+Какой кадр за что отвечает — рот закрыт, приоткрыт, открыт широко, подмигивание — задаётся в `FRAME` и `MOUTH` в начале `app/renderer/companion.js`.
+
+</details>
+
+<details>
+<summary><b>Под капотом</b></summary>
+<br>
+
+- **Electron** — прозрачное окно поверх всех, пропускающее клики сквозь пустые места; перетаскивание следует за системным курсором, а кнопку мыши читает из Windows через **koffi**
+- **HTML, CSS и JS без фреймворков** — кадры спрайтов, анимации режимов и печать текста, где форма рта подбирается по гласным
+- **Локальный HTTP** на `127.0.0.1:48159` — одна дверь для всех агентов
+- **Плагин Claude Code** — хуки, команда `/companion` и кнопка запуска; тесты: `claude plugin test ./plugin`
+- **Python + Pillow** — `tools/slice_sprites.py` нарезает и выравнивает спрайт-лист
+
+</details>
+
+<br>
+
+<div align="center">
+<sub>сделано с большой 💜 и маленьким дракончиком</sub>
+</div>
