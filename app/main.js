@@ -15,7 +15,8 @@ const CLICK_SLOP_PX = 4;
 
 let win = null;
 let tray = null;
-let press = null;          // нажатие на персонажа: { offsetX, offsetY, startX, startY, moved, timer }
+let hoverTimer = null;
+let press = null;         // нажатие на персонажа: { offsetX, offsetY, startX, startY, moved, timer }
 let hitRects = [];         // где в окне есть что-то кликабельное (сообщает renderer)
 let ignoringMouse = true;
 // Спрятан ли компаньон. Окно при этом не прячется через hide(): после hide()/show() Chromium
@@ -91,6 +92,13 @@ function createWindow() {
   win.setIgnoreMouseEvents(true);
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
   win.webContents.on('did-finish-load', () => win.webContents.send('settings', settings));
+  // Таймеры опроса мыши переживают окно: без этого они дёргают уничтоженный win до выхода
+  win.on('closed', () => {
+    clearInterval(hoverTimer);
+    if (press) clearInterval(press.timer);
+    press = null;
+    win = null;
+  });
 }
 
 function resetPosition() {
@@ -349,7 +357,7 @@ if (!app.requestSingleInstanceLock()) {
     createTray();
     startServer();
     writeLaunchInfo();
-    setInterval(pollHover, HOVER_POLL_MS);
+    hoverTimer = setInterval(pollHover, HOVER_POLL_MS);
   });
   // Повторный запуск (например, из /companion) просто показывает уже открытое окно
   app.on('second-instance', () => win && showWindow());
