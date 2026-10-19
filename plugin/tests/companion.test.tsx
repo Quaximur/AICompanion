@@ -55,7 +55,7 @@ function world(on: On, companion: World['companion']): World {
 test('/companion запускает закрытого компаньона отвязанным процессом', async ($, on) => {
   const w = world(on, 'offline')
   const { text } = await $.command.run(RUN)
-  expect(text).toBe('Запускаю компаньона…')
+  expect(text).toBe('Starting the companion…')
   expect(w.runs.length).toBe(1)
   const [exe, , , , command] = w.runs[0] ?? []
   expect(exe).toBe('powershell.exe')
@@ -65,7 +65,7 @@ test('/companion запускает закрытого компаньона от
 test('/companion показывает спрятанного компаньона без нового запуска', async ($, on) => {
   const w = world(on, 'hidden')
   const { text } = await $.command.run(RUN)
-  expect(text).toBe('Компаньон снова на экране.')
+  expect(text).toBe('The companion is back on screen.')
   expect(w.shows).toBe(1)
   expect(w.runs.length).toBe(0)
 })
@@ -73,7 +73,7 @@ test('/companion показывает спрятанного компаньон�
 test('/companion ничего не делает, если компаньон уже на экране', async ($, on) => {
   const w = world(on, 'shown')
   const { text } = await $.command.run(RUN)
-  expect(text).toBe('Компаньон уже на экране.')
+  expect(text).toBe('The companion is already on screen.')
   expect(w.runs.length + w.shows).toBe(0)
 })
 

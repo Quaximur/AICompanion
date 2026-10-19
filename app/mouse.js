@@ -18,7 +18,7 @@ function createButtonReader() {
       return (getAsyncKeyState(key) & 0x8000) !== 0;
     };
   } catch (err) {
-    console.error('Не удалось подключить user32 через koffi, перетаскивание завершится по событию окна:', err.message);
+    console.error('Could not load user32 via koffi, dragging will end on the window event:', err.message);
     return null;
   }
 }

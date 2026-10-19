@@ -26,20 +26,20 @@ const STATE_FACE = {
 };
 
 const STATE_LABEL = {
-  idle: 'Отдыхаю',
-  thinking: 'Думаю…',
-  working: 'Работаю',
-  waiting: 'Жду тебя',
-  done: 'Готово',
-  error: 'Ошибка',
-  speaking: 'Отвечаю',
+  idle: 'Resting',
+  thinking: 'Thinking…',
+  working: 'Working',
+  waiting: 'Waiting for you',
+  done: 'Done',
+  error: 'Error',
+  speaking: 'Answering',
 };
 
 const SOURCE_LABEL = {
   'claude-code': 'Claude Code',
   'claude-desktop': 'Claude',
   codex: 'Codex',
-  demo: 'Демо',
+  demo: 'Demo',
 };
 
 const MAX_SPOKEN_CHARS = 900;
@@ -140,7 +140,7 @@ function scheduleIdleLife() {
 // Убираем markdown, чтобы в облачке читалось как речь
 function toSpeech(text) {
   let out = text
-    .replace(/```[\s\S]*?```/g, ' [код] ')
+    .replace(/```[\s\S]*?```/g, ' [code] ')
     .replace(/`([^`]+)`/g, '$1')
     .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
@@ -171,7 +171,10 @@ function mouthFor(ch) {
 
 // ---------- облачко ----------
 
-let speech = null; // { text, shown, timer, hideTimer, utterance }
+let speech = null; // { text, final, shown, timer, hideTimer, utterance }
+// Реплики, пришедшие пока облачко ещё печатается, ждут своей очереди
+const sayQueue = [];
+const NEXT_SAY_MS = 2500;
 
 function cancelSpeech() {
   if (!speech) return;
@@ -196,14 +199,17 @@ function renderBubbleText(text, shown) {
   }
 }
 
-function say(rawText, source) {
+function say(rawText, source, state = 'done') {
   cancelSpeech();
   const text = toSpeech(rawText);
   if (!text) return;
 
-  // Ответ пришёл — значит агент закончил ход; новые события во время речи обновят режим
-  mode = 'done';
-  modeMeta = { source };
+  // Финальный ответ — агент закончил ход; промежуточная реплика режим не меняет
+  const final = state === 'done';
+  if (final) {
+    mode = 'done';
+    modeMeta = { source };
+  }
   clearTimeout(modeTimer);
   clearTimeout(chipTimer);
   speaking = true;
@@ -215,7 +221,7 @@ function say(rawText, source) {
   els.bubble.classList.remove('hidden', 'leaving');
   renderBubbleText(text, 0);
 
-  speech = { text, shown: 0, timer: null, hideTimer: null, utterance: null };
+  speech = { text, final, shown: 0, timer: null, hideTimer: null, utterance: null };
   if (settings.tts && window.speechSynthesis) speakAloud(speech);
   else typeNext(speech);
 }
@@ -293,9 +299,10 @@ function finishSpeech(s) {
     setFrame(FRAME.laugh, true);
     setMode('done');
   }
-  // Облачко висит пропорционально длине текста; наведение мыши его задерживает
+  // Облачко висит пропорционально длине текста; наведение мыши его задерживает.
+  // Если за это время пришли новые реплики — следующая сменяет облачко чуть раньше.
   const readMs = Math.min(30000, 4000 + s.text.length * 45);
-  scheduleBubbleHide(s, readMs);
+  scheduleBubbleHide(s, sayQueue.length ? Math.min(readMs, NEXT_SAY_MS) : readMs);
 }
 
 function scheduleBubbleHide(s, ms) {
@@ -306,8 +313,19 @@ function scheduleBubbleHide(s, ms) {
       scheduleBubbleHide(s, 1500);
       return;
     }
-    hideBubble();
+    if (sayQueue.length) sayNext();
+    else hideBubble();
   }, ms);
+}
+
+function enqueueSay(event) {
+  if (speech && speech.shown < speech.text.length) sayQueue.push(event);
+  else say(event.text, event.source, event.state);
+}
+
+function sayNext() {
+  const next = sayQueue.shift();
+  if (next) say(next.text, next.source, next.state);
 }
 
 function hideBubble() {
@@ -326,11 +344,13 @@ function hideBubble() {
 
 function handleEvent(event) {
   if (event.type === 'say') {
-    say(event.text, event.source);
+    enqueueSay(event);
     return;
   }
-  // Новая работа агента прерывает недочитанное облачко только если оно уже договорено
-  if (event.state !== 'done' && speech && speech.shown >= speech.text.length) hideBubble();
+  // Новая работа агента убирает договорённый финальный ответ; промежуточные реплики
+  // идут вперемешку с вызовами инструментов и висят, пока их не дочитают
+  const finished = speech && speech.final && speech.shown >= speech.text.length && !sayQueue.length;
+  if (event.state !== 'done' && finished) hideBubble();
   setMode(event.state, event);
 }
 
@@ -377,12 +397,14 @@ els.buddy.addEventListener('contextmenu', (e) => {
 });
 
 els.bubble.addEventListener('click', () => {
-  // Клик по печатающемуся облачку — показать весь текст сразу, по готовому — закрыть
+  // Клик по печатающемуся облачку — показать весь текст сразу, по готовому — следующая реплика или закрыть
   if (speech && speech.shown < speech.text.length && !speech.utterance) {
     clearTimeout(speech.timer);
     speech.shown = speech.text.length;
     renderBubbleText(speech.text, speech.text.length);
     finishSpeech(speech);
+  } else if (sayQueue.length) {
+    sayNext();
   } else {
     hideBubble();
   }

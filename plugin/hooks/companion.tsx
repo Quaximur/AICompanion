@@ -63,7 +63,7 @@ const quotePs = (value: string) => `'${value.replaceAll("'", "''")}'`
 
 async function launch($: EngineInterface, argv: string[]): Promise<void> {
   const [exe, ...args] = argv
-  if (!exe) throw new Error('пустая команда запуска')
+  if (!exe) throw new Error('empty launch command')
   // Start-Process отвязывает приложение от сессии: $.process.run ждёт выхода
   // запущенной программы, а компаньон должен жить дальше
   const argList = args.map((arg) => quotePs(`"${arg}"`)).join(',')
@@ -77,32 +77,32 @@ async function launch($: EngineInterface, argv: string[]): Promise<void> {
 
 async function openCompanion($: EngineInterface): Promise<string> {
   const current = await refreshStatus($)
-  if (current === 'shown') return 'Компаньон уже на экране.'
+  if (current === 'shown') return 'The companion is already on screen.'
 
   if (current === 'hidden') {
     await $.http.fetch(`${BASE_URL}/show`, { method: 'POST' })
     await refreshStatus($)
-    return 'Компаньон снова на экране.'
+    return 'The companion is back on screen.'
   }
 
   const argv = await findLaunchArgv($)
   if (!argv) {
-    return 'Не нашёл, где установлено приложение AI Companion. Запустите его один раз вручную (npm start в папке проекта) — после этого /companion будет запускать его сам.'
+    return "Couldn't find where the AI Companion app is installed. Start it once by hand (npm start in the project folder) — after that /companion will launch it for you."
   }
   try {
     await launch($, argv)
   } catch (err) {
-    return `Не удалось запустить компаньона: ${err instanceof Error ? err.message : String(err)}`
+    return `Failed to start the companion: ${err instanceof Error ? err.message : String(err)}`
   }
   for (const ms of LAUNCH_CHECKS_MS) $.clock.after(ms, () => void refreshStatus($))
-  return 'Запускаю компаньона…'
+  return 'Starting the companion…'
 }
 
 export const register: Register = (on) => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'companion',
-      description: 'Показать компаньона на рабочем столе (запустить, если он закрыт)',
+      description: 'Show the desktop companion (start it if it is closed)',
       immediate: true,
     })
     await refreshStatus($)
@@ -120,14 +120,14 @@ export const register: Register = (on) => {
     const { Box, Button, Text } = $.ui.resolve(e)
     return (
       <Box flexDirection="row" gap={1}>
-        <Text dimColor>Компаньон не запущен</Text>
+        <Text dimColor>Companion is not running</Text>
         <Button
           key="companion-start"
-          label="Запустить"
+          label="Start"
           variant="primary"
           onPress={async () => $.ui.toast(await openCompanion($))}
         />
-        <Button key="companion-hide" label="Скрыть" onPress={() => update($, isBandHidden, () => true)} />
+        <Button key="companion-hide" label="Hide" onPress={() => update($, isBandHidden, () => true)} />
       </Box>
     )
   })

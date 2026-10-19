@@ -40,7 +40,7 @@ function saveSettings() {
   try {
     fs.writeFileSync(settingsPath(), JSON.stringify(settings, null, 2));
   } catch (err) {
-    console.error('Не удалось сохранить настройки:', err.message);
+    console.error('Failed to save settings:', err.message);
   }
 }
 
@@ -113,7 +113,7 @@ function resetPosition() {
 function buildMenu() {
   return Menu.buildFromTemplate([
     {
-      label: 'Озвучивать голосом',
+      label: 'Read aloud',
       type: 'checkbox',
       checked: settings.tts,
       click: (item) => {
@@ -123,7 +123,7 @@ function buildMenu() {
       },
     },
     {
-      label: 'Размер',
+      label: 'Size',
       submenu: [0.75, 1, 1.25, 1.5].map((scale) => ({
         label: `${Math.round(scale * 100)}%`,
         type: 'radio',
@@ -136,7 +136,7 @@ function buildMenu() {
       })),
     },
     {
-      label: 'Зафиксировать на месте',
+      label: 'Lock in place',
       type: 'checkbox',
       checked: settings.locked,
       click: (item) => {
@@ -146,11 +146,11 @@ function buildMenu() {
         tray.setContextMenu(buildMenu());
       },
     },
-    { label: 'Проверить (демо)', click: () => runDemo() },
-    { label: 'Вернуть в угол', click: resetPosition },
+    { label: 'Try it (demo)', click: () => runDemo() },
+    { label: 'Back to corner', click: resetPosition },
     { type: 'separator' },
-    { label: isHidden ? 'Показать' : 'Спрятать', click: toggleVisible },
-    { label: 'Выход', click: () => app.quit() },
+    { label: isHidden ? 'Show' : 'Hide', click: toggleVisible },
+    { label: 'Quit', click: () => app.quit() },
   ]);
 }
 
@@ -176,7 +176,7 @@ function writeLaunchInfo() {
   try {
     fs.writeFileSync(path.join(app.getPath('userData'), 'launch.json'), JSON.stringify(info, null, 2));
   } catch (err) {
-    console.error('Не удалось записать launch.json:', err.message);
+    console.error('Failed to write launch.json:', err.message);
   }
 }
 
@@ -185,7 +185,7 @@ function createTray() {
     .createFromPath(path.join(__dirname, 'renderer', 'frames', 'frame_00.png'))
     .resize({ width: 16, height: 16, quality: 'best' });
   tray = new Tray(icon);
-  tray.setToolTip(`AI Companion — слушает ${HOST}:${PORT}`);
+  tray.setToolTip(`AI Companion — listening on ${HOST}:${PORT}`);
   tray.setContextMenu(buildMenu());
   tray.on('click', toggleVisible);
 }
@@ -195,9 +195,9 @@ function runDemo() {
     [0, { source: 'demo', type: 'status', state: 'thinking' }],
     [1800, { source: 'demo', type: 'status', state: 'working', detail: 'Read main.js' }],
     [3400, { source: 'demo', type: 'status', state: 'working', detail: 'Edit companion.js' }],
-    [5000, { source: 'demo', type: 'status', state: 'waiting', detail: 'Разрешить запуск npm test?' }],
+    [5000, { source: 'demo', type: 'status', state: 'waiting', detail: 'Allow running npm test?' }],
     [7000, { source: 'demo', type: 'status', state: 'working', detail: 'npm test' }],
-    [8600, { source: 'demo', type: 'say', text: 'Готово! Я поправил анимацию рта и прогнал тесты — всё зелёное. Можешь проверять 🎉' }],
+    [8600, { source: 'demo', type: 'say', text: 'Done! I fixed the mouth animation and ran the tests — all green. Go take a look 🎉' }],
   ];
   for (const [delay, event] of steps) setTimeout(() => dispatch(event), delay);
 }
@@ -205,7 +205,7 @@ function runDemo() {
 // ---------- events ----------
 
 function normalize(raw) {
-  if (!raw || typeof raw !== 'object') throw new Error('ожидался JSON-объект');
+  if (!raw || typeof raw !== 'object') throw new Error('expected a JSON object');
   const type = raw.type === 'say' ? 'say' : 'status';
   const state = STATES.includes(raw.state) ? raw.state : type === 'say' ? 'done' : 'idle';
   return {
@@ -261,7 +261,7 @@ function startServer() {
   });
 
   server.on('error', (err) => {
-    console.error(`HTTP-сервер компаньона не запустился (${HOST}:${PORT}):`, err.message);
+    console.error(`Companion HTTP server failed to start (${HOST}:${PORT}):`, err.message);
   });
   server.listen(PORT, HOST);
 }

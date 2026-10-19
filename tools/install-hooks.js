@@ -45,7 +45,7 @@ function stripCompanion(hooks) {
 
 function apply(name, target, uninstall) {
   if (!fs.existsSync(path.dirname(target.file))) {
-    console.log(`- ${name}: ${path.dirname(target.file)} не найден, пропускаю`);
+    console.log(`- ${name}: ${path.dirname(target.file)} not found, skipping`);
     return;
   }
   const config = readJson(target.file);
@@ -66,7 +66,7 @@ function apply(name, target, uninstall) {
 
   if (fs.existsSync(target.file)) fs.copyFileSync(target.file, target.file + '.bak-companion');
   fs.writeFileSync(target.file, JSON.stringify(config, null, 2) + '\n');
-  console.log(`✓ ${name}: ${install ? 'хуки добавлены в' : 'хуки удалены из'} ${target.file}`);
+  console.log(`✓ ${name}: ${install ? 'hooks added to' : 'hooks removed from'} ${target.file}`);
 }
 
 const uninstall = process.argv.includes('--uninstall');
@@ -79,4 +79,4 @@ for (const [name, target] of Object.entries(TARGETS)) {
     process.exitCode = 1;
   }
 }
-if (!uninstall) console.log('Перезапустите Codex, чтобы хуки подхватились.');
+if (!uninstall) console.log('Restart Codex to pick up the hooks.');
